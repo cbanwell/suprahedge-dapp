@@ -31,6 +31,7 @@ interface ProcessEnv {
 
 interface GlobalEnv {
     __ENV__?: Record<string, string | undefined>
+    __NEXT_PUBLIC__?: Record<string, string | undefined>
     [key: string]: unknown
 }
 
@@ -48,8 +49,12 @@ function readPublicEnv(key: string): string | undefined {
     // 2) Optional runtime injection (window.__ENV__ or globals)
     try {
         const g = globalThis as GlobalEnv
-        const v = g?.__ENV__?.[key] ?? g?.[key] ?? g?.__NEXT_PUBLIC__?.[key]
-        if (typeof v === 'string' && v.length) return v
+        const envValue = g?.__ENV__?.[key]
+        if (envValue && typeof envValue === 'string' && envValue.length) return envValue
+        const nextPublicValue = g?.__NEXT_PUBLIC__?.[key]
+        if (nextPublicValue && typeof nextPublicValue === 'string' && nextPublicValue.length) return nextPublicValue
+        const directValue = g?.[key]
+        if (directValue && typeof directValue === 'string' && directValue.length) return directValue
     } catch { }
     return undefined
 }
