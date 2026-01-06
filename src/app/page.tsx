@@ -12,6 +12,7 @@
 // If these are missing, the page renders with actions disabled and shows hints.
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import Image from 'next/image'
 import {
     createPublicClient,
     createWalletClient,
@@ -24,17 +25,29 @@ import {
 // -----------------------------
 // Safe env access (works client & server)
 // -----------------------------
+interface ProcessEnv {
+    env?: Record<string, string | undefined>
+}
+
+interface GlobalEnv {
+    __ENV__?: Record<string, string | undefined>
+    [key: string]: unknown
+}
+
 function readPublicEnv(key: string): string | undefined {
     // 1) Build-time inlined by Next.js (safe-guarded)
     try {
-        if (typeof process !== 'undefined' && (process as any).env) {
-            const v = (process as any).env[key]
-            if (typeof v === 'string' && v.length) return v
+        if (typeof process !== 'undefined') {
+            const proc = process as ProcessEnv
+            if (proc.env) {
+                const v = proc.env[key]
+                if (typeof v === 'string' && v.length) return v
+            }
         }
     } catch { }
     // 2) Optional runtime injection (window.__ENV__ or globals)
     try {
-        const g: any = globalThis as any
+        const g = globalThis as GlobalEnv
         const v = g?.__ENV__?.[key] ?? g?.[key] ?? g?.__NEXT_PUBLIC__?.[key]
         if (typeof v === 'string' && v.length) return v
     } catch { }
@@ -82,11 +95,14 @@ function useWallet() {
 
     const connect = useCallback(async () => {
         setError(undefined)
-        const eth = (globalThis as any).ethereum
+        interface EthereumProvider {
+            request: (args: { method: string }) => Promise<string[] | string>
+        }
+        const eth = (globalThis as { ethereum?: EthereumProvider }).ethereum
         if (!eth) { setError('No injected wallet found'); return }
         const wc = createWalletClient({ transport: custom(eth) })
         setWallet(wc)
-        const [addr] = await eth.request({ method: 'eth_requestAccounts' })
+        const [addr] = await eth.request({ method: 'eth_requestAccounts' }) as string[]
         setAddress(addr)
         try { setChainId(await eth.request({ method: 'eth_chainId' }).then((x: string) => parseInt(x, 16))) } catch { }
     }, [])
@@ -343,7 +359,7 @@ function AppFunctional() {
 function Logo() {
     return (
         <div className="flex items-center gap-3">
-            <img src="/brand/delta_zero_mark_1024.png" alt="DeltaZero" className="h-8 w-8" />
+            <Image src="/brand/delta_zero_mark_1024.png" alt="DeltaZero" width={32} height={32} className="h-8 w-8" />
             <div className="text-xl font-bold">
                 <span>Delta</span>
                 <span className="bg-[linear-gradient(135deg,#00E8D5,#7C3AED)] bg-clip-text text-transparent">Zero</span>
@@ -474,11 +490,13 @@ function CircuitPills() {
 // Dev-only sanity tests (run in dev; safe in prod)
 // -----------------------------
 try {
-    if (typeof process !== 'undefined' && (process as any).env?.NODE_ENV !== 'production') {
+    const proc = process as ProcessEnv
+    if (typeof process !== 'undefined' && proc.env?.NODE_ENV !== 'production') {
         // Test: missing key returns undefined
         console.assert(readPublicEnv('___MISSING___') === undefined, 'env: missing should be undefined')
-            // Test: runtime window injection works
-            ; (globalThis as any).__ENV__ = { TEST_KEY: 'ok' }
+        // Test: runtime window injection works
+        const g = globalThis as GlobalEnv
+        g.__ENV__ = { TEST_KEY: 'ok' }
         console.assert(readPublicEnv('TEST_KEY') === 'ok', 'env: window.__ENV__ fallback should work')
     }
 } catch { }
