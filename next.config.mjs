@@ -1,8 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     reactStrictMode: true,
-    // 'output: standalone' is optional on cPanel, but harmless if you want it
-    output: 'standalone',
+    // Removed 'output: standalone' - not needed for Vercel deployment
     async redirects() {
         return [
             { source: '/whitepaper', destination: '/docs/SupraHedge_Whitepaper.pdf', permanent: true },
