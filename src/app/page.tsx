@@ -12,7 +12,6 @@
 // If these are missing, the page renders with actions disabled and shows hints.
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import Image from 'next/image'
 import {
     createPublicClient,
     createWalletClient,
@@ -389,7 +388,29 @@ function AppFunctional() {
 function Logo() {
     return (
         <div className="flex items-center gap-3">
-            <Image src="/brand/delta_zero_mark_1024.png" alt="DeltaZero" width={32} height={32} className="h-8 w-8" />
+            <svg 
+                width="32" 
+                height="32" 
+                viewBox="0 0 32 32" 
+                fill="none" 
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-8 w-8"
+            >
+                <defs>
+                    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#00E8D5" />
+                        <stop offset="100%" stopColor="#7C3AED" />
+                    </linearGradient>
+                </defs>
+                <circle cx="16" cy="16" r="14" fill="url(#logoGradient)" opacity="0.2" />
+                <path 
+                    d="M16 8 L24 16 L16 24 L8 16 Z" 
+                    fill="url(#logoGradient)" 
+                    stroke="url(#logoGradient)" 
+                    strokeWidth="1.5"
+                />
+                <circle cx="16" cy="16" r="3" fill="url(#logoGradient)" />
+            </svg>
             <div className="text-xl font-bold">
                 <span>Delta</span>
                 <span className="bg-[linear-gradient(135deg,#00E8D5,#7C3AED)] bg-clip-text text-transparent">Zero</span>
