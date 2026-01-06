@@ -3,10 +3,10 @@ import './globals.css'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-    title: 'DeltaZero — Delta-neutral, funding-forward',
+    title: 'DeltaZero â€” Delta-neutral, funding-forward',
     description: 'Earn systematic yield from perp funding while your delta stays flat. On Supra.',
     openGraph: {
-        title: 'DeltaZero — Delta-neutral, funding-forward',
+        title: 'DeltaZero â€” Delta-neutral, funding-forward',
         description: 'Perp funding vault on Supra. Neutral by design.',
         images: ['/brand/opengraph_1200x630.png'],
     },
