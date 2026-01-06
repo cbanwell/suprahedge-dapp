@@ -109,7 +109,11 @@ function useWallet() {
         setWallet(wc)
         const [addr] = await eth.request({ method: 'eth_requestAccounts' }) as string[]
         setAddress(addr)
-        try { setChainId(await eth.request({ method: 'eth_chainId' }).then((x: string) => parseInt(x, 16))) } catch { }
+        try {
+            const chainIdResult = await eth.request({ method: 'eth_chainId' })
+            const chainIdStr = Array.isArray(chainIdResult) ? chainIdResult[0] : chainIdResult
+            setChainId(parseInt(chainIdStr, 16))
+        } catch { }
     }, [])
 
     const disconnect = useCallback(() => {
