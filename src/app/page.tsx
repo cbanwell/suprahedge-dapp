@@ -195,9 +195,23 @@ function AppFunctional() {
             const account = address as `0x${string}`
             const allowance = await publicClient.readContract({ address: USDC_ADDR as `0x${string}`, abi: abiErc20, functionName: 'allowance', args: [account, VAULT_ADDR as `0x${string}`] }) as bigint
             if (allowance < assets) {
-                await wallet.writeContract({ account, address: USDC_ADDR as `0x${string}`, abi: abiErc20, functionName: 'approve', args: [VAULT_ADDR as `0x${string}`, assets] })
+                await wallet.writeContract({ 
+                    account, 
+                    address: USDC_ADDR as `0x${string}`, 
+                    abi: abiErc20, 
+                    functionName: 'approve', 
+                    args: [VAULT_ADDR as `0x${string}`, assets],
+                    chain: null
+                } as never)
             }
-            await wallet.writeContract({ account, address: VAULT_ADDR as `0x${string}`, abi: abiVault, functionName: 'deposit', args: [assets, account] })
+            await wallet.writeContract({ 
+                account, 
+                address: VAULT_ADDR as `0x${string}`, 
+                abi: abiVault, 
+                functionName: 'deposit', 
+                args: [assets, account],
+                chain: null
+            } as never)
         } finally {
             setBusy(false)
         }
@@ -209,7 +223,14 @@ function AppFunctional() {
         try {
             const account = address as `0x${string}`
             const shares = (userShares * BigInt(withdrawPct)) / BigInt(100)
-            await wallet.writeContract({ account, address: VAULT_ADDR as `0x${string}`, abi: abiVault, functionName: 'redeem', args: [shares, account, account] })
+            await wallet.writeContract({ 
+                account, 
+                address: VAULT_ADDR as `0x${string}`, 
+                abi: abiVault, 
+                functionName: 'redeem', 
+                args: [shares, account, account],
+                chain: null
+            } as never)
         } finally {
             setBusy(false)
         }
