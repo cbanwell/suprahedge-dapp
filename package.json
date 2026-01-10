@@ -2,6 +2,7 @@
   "name": "suprahedge-dapp",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -27,15 +28,5 @@
   },
   "engines": {
     "node": ">=20.x"
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
   }
-=======
-  },
-  "type": "module"
->>>>>>> Stashed changes
-=======
-  },
-  "type": "module"
->>>>>>> Stashed changes
 }

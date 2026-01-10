@@ -1,56 +1,122 @@
-﻿// SPDX-License-Identifier: MIT
-using System.Diagnostics.Contracts;
-
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-/// @notice Minimal MVP vault stub for SupraHedge.
-/// @dev This is NOT production-complete. No strategy logic yet.
-contract SupraHedgeVault
-{
-    string public constant NAME = "SupraHedge Vault MVP";
-address public owner;
+/// @title SupraHedge Vault (MVP)
+/// @author SupraHedge
+/// @notice Phase-0 vault with transparent accounting and safety controls.
+/// @dev Strategy + venue adapters will be added in later phases.
+contract SupraHedgeVault {
+    /*//////////////////////////////////////////////////////////////
+                                EVENTS
+    //////////////////////////////////////////////////////////////*/
 
-event Deposit(address indexed user, uint256 amount);
+    event Deposit(address indexed user, uint256 amount);
     event Withdraw(address indexed user, uint256 amount);
-    event OwnerChanged(address indexed oldOwner, address indexed newOwner);
+    event Paused(bool paused);
+    event GuardianUpdated(address indexed guardian);
+    event OwnerUpdated(address indexed newOwner);
 
-modifier onlyOwner() {
-    require(msg.sender == owner, "NOT_OWNER");
-    _;
-}
+    /*//////////////////////////////////////////////////////////////
+                               STORAGE
+    //////////////////////////////////////////////////////////////*/
 
-constructor() {
-    owner = msg.sender;
-}
+    address public owner;
+    address public guardian;
 
-function setOwner(address newOwner) external onlyOwner
-{
-    require(newOwner != address(0), "ZERO_ADDR");
-    emit OwnerChanged(owner, newOwner);
-    owner = newOwner;
-}
+    bool public paused;
 
-// Placeholder accounting (we’ll replace with ERC4626 later)
-mapping(address => uint256) public balances;
+    // User ETH balances (placeholder for share accounting)
+    mapping(address => uint256) public balances;
 
-function deposit() external payable
-{
-    require(msg.value > 0, "ZERO");
-    balances [msg.sender] += msg.value;
-    emit Deposit(msg.sender, msg.value);
-}
+    uint256 public totalAssets;
 
-function withdraw(uint256 amount) external {
-        require(amount > 0, "ZERO");
-require(balances[msg.sender] >= amount, "INSUFFICIENT");
-balances[msg.sender] -= amount;
-(bool ok, ) = msg.sender.call{ value: amount} ("");
-require(ok, "SEND_FAIL");
-emit Withdraw(msg.sender, amount);
+    /*//////////////////////////////////////////////////////////////
+                               MODIFIERS
+    //////////////////////////////////////////////////////////////*/
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "NOT_OWNER");
+        _;
     }
 
-    receive() external payable
-{
-    deposit();
-}
+    modifier onlyGuardianOrOwner() {
+        require(msg.sender == owner || msg.sender == guardian, "NOT_AUTHORIZED");
+        _;
+    }
+
+    modifier notPaused() {
+        require(!paused, "VAULT_PAUSED");
+        _;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                              CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
+
+    constructor(address _guardian) {
+        owner = msg.sender;
+        guardian = _guardian;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        DEPOSIT / WITHDRAW
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Deposit ETH into the vault
+    function deposit() public payable notPaused {
+        require(msg.value > 0, "ZERO_DEPOSIT");
+
+        balances[msg.sender] += msg.value;
+        totalAssets += msg.value;
+
+        emit Deposit(msg.sender, msg.value);
+    }
+
+    /// @notice Withdraw ETH from the vault
+    function withdraw(uint256 amount) external notPaused {
+        require(amount > 0, "ZERO_WITHDRAW");
+        require(balances[msg.sender] >= amount, "INSUFFICIENT_BALANCE");
+
+        balances[msg.sender] -= amount;
+        totalAssets -= amount;
+
+        (bool ok, ) = msg.sender.call{value: amount}("");
+        require(ok, "ETH_TRANSFER_FAILED");
+
+        emit Withdraw(msg.sender, amount);
+    }
+
+    /// @notice Allow plain ETH transfers
+    receive() external payable {
+        deposit();
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                         ADMIN / SAFETY
+    //////////////////////////////////////////////////////////////*/
+
+    function setPaused(bool _paused) external onlyGuardianOrOwner {
+        paused = _paused;
+        emit Paused(_paused);
+    }
+
+    function setGuardian(address newGuardian) external onlyOwner {
+        require(newGuardian != address(0), "ZERO_ADDRESS");
+        guardian = newGuardian;
+        emit GuardianUpdated(newGuardian);
+    }
+
+    function setOwner(address newOwner) external onlyOwner {
+        require(newOwner != address(0), "ZERO_ADDRESS");
+        owner = newOwner;
+        emit OwnerUpdated(newOwner);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                         VIEW HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function assets() external view returns (uint256) {
+        return totalAssets;
+    }
 }
